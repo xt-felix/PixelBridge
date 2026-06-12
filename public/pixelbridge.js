@@ -223,21 +223,41 @@
     });
   }
 
-  // Fetch/XHR interception fallback for add-to-cart
+  // Fetch/XHR interception for add-to-cart
   var origFetch = window.fetch;
   window.fetch = function() {
-    var url = arguments[0];
-    if (typeof url === 'string' && url.indexOf('/cart/add') > -1) {
+    var url = typeof arguments[0] === 'string' ? arguments[0] : (arguments[0] && arguments[0].url) || '';
+    if (url.match(/\/cart\/add|\/add\.js|\/cart-id|cart.*add|add.*cart/i) || (url.indexOf('/add') > -1 && url.indexOf('cart') > -1)) {
       try {
         var opts = arguments[1] || {};
-        var body = opts.body ? JSON.parse(opts.body) : {};
+        var body = opts.body ? (typeof opts.body === 'string' ? JSON.parse(opts.body) : opts.body) : {};
         sendEvent('add_to_cart', {
-          product_id: body.id || body.variant_id || '',
-          quantity: body.quantity || 1,
+          product_id: body.id || body.variant_id || body.items?.[0]?.id || '',
+          quantity: body.quantity || body.items?.[0]?.quantity || 1,
         });
       } catch(e) {}
     }
     return origFetch.apply(this, arguments);
+  };
+
+  // XHR interception for add-to-cart
+  var origXHROpen = XMLHttpRequest.prototype.open;
+  var origXHRSend = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function(method, url) {
+    this._pbUrl = url;
+    return origXHROpen.apply(this, arguments);
+  };
+  XMLHttpRequest.prototype.send = function(body) {
+    if (this._pbUrl && (this._pbUrl.match(/\/add/i) && this._pbUrl.match(/cart/i) || this._pbUrl.indexOf('/cart/add') > -1)) {
+      try {
+        var data = body ? JSON.parse(body) : {};
+        sendEvent('add_to_cart', {
+          product_id: data.id || data.variant_id || data.items?.[0]?.id || '',
+          quantity: data.quantity || data.items?.[0]?.quantity || 1,
+        });
+      } catch(e) {}
+    }
+    return origXHRSend.apply(this, arguments);
   };
 
   // === Init: fetch config then start ===
