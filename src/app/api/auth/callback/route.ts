@@ -3,43 +3,64 @@ import { saveShopSession } from '@/lib/shop-config';
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code') || '';
-  let handle = req.nextUrl.searchParams.get('handle') || req.nextUrl.searchParams.get('shop') || '';
+  let handle = req.nextUrl.searchParams.get('handle') || req.nextUrl.searchParams.get('shop') || req.nextUrl.searchParams.get('store') || '';
 
-  // Shopline may pass store handle in different params
-  if (!handle) {
-    handle = req.nextUrl.searchParams.get('store') || '';
-  }
-  // Try to extract from state param or referrer
-  if (!handle) {
-    const allParams = Object.fromEntries(req.nextUrl.searchParams.entries());
-    console.log('[auth/callback] all params:', allParams);
-  }
-
-  if (!code) {
-    return NextResponse.json({ error: 'Missing code', params: Object.fromEntries(req.nextUrl.searchParams.entries()) }, { status: 400 });
-  }
-
-  // If no handle, use dev store as fallback during development
   if (!handle) handle = 'pixelbridge-dev';
 
-  const tokenRes = await fetch(`https://${handle}.myshopline.com/admin/oauth/token/create`, {
+  if (!code) {
+    return NextResponse.json({
+      error: 'Missing code',
+      params: Object.fromEntries(req.nextUrl.searchParams.entries()),
+    }, { status: 400 });
+  }
+
+  // Try multiple token exchange formats
+  const appKey = process.env.SHOPLINE_APP_KEY!;
+  const appSecret = process.env.SHOPLINE_APP_SECRET!;
+  const tokenUrl = `https://${handle}.myshopline.com/admin/oauth/token/create`;
+
+  // Format 1: Shopline standard
+  let tokenRes = await fetch(tokenUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       code,
-      appKey: process.env.SHOPLINE_APP_KEY,
-      appSecret: process.env.SHOPLINE_APP_SECRET,
+      appKey,
+      appSecret,
     }),
   });
 
-  const tokenData = await tokenRes.json();
+  let tokenData = await tokenRes.json();
 
-  if (!tokenData.token) {
-    console.error('[auth] token exchange failed:', tokenData);
-    return NextResponse.json({ error: 'Token exchange failed' }, { status: 500 });
+  // Format 2: try with snake_case if first attempt failed
+  if (!tokenData.token && !tokenData.access_token) {
+    tokenRes = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code,
+        app_key: appKey,
+        app_secret: appSecret,
+        grant_type: 'authorization_code',
+      }),
+    });
+    tokenData = await tokenRes.json();
   }
 
-  await saveShopSession(handle, tokenData.token);
+  const accessToken = tokenData.token || tokenData.access_token;
+
+  if (!accessToken) {
+    // Return detailed error for debugging
+    return NextResponse.json({
+      error: 'Token exchange failed',
+      handle,
+      code: code.substring(0, 10) + '...',
+      response: tokenData,
+      tokenUrl,
+    }, { status: 500 });
+  }
+
+  await saveShopSession(handle, accessToken);
 
   // Register webhooks
   const webhookTopics = ['order/paid-successfully', 'apps/installed_uninstalled'];
@@ -47,7 +68,7 @@ export async function GET(req: NextRequest) {
     await fetch(`https://${handle}.myshopline.com/admin/openapi/v20250601/webhooks.json`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${tokenData.token}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -57,8 +78,26 @@ export async function GET(req: NextRequest) {
           format: 'json',
         },
       }),
-    }).catch(e => console.error(`[auth] webhook register failed: ${topic}`, e.message));
+    }).catch(() => {});
   }
+
+  // Also inject ScriptTag immediately after auth
+  const appUrl = process.env.SHOPLINE_APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  const scriptSrc = `${appUrl}/pixelbridge.js?shop=${handle}&server=${appUrl}`;
+  await fetch(`https://${handle}.myshopline.com/admin/openapi/v20250601/store/script_tags.json`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      script_tag: {
+        event: 'onload',
+        src: scriptSrc,
+        display_scope: 'all',
+      },
+    }),
+  }).catch(() => {});
 
   return NextResponse.redirect(`${process.env.SHOPLINE_APP_URL}/dashboard?shop=${handle}`);
 }
