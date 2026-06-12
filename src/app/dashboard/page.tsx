@@ -11,10 +11,10 @@ interface PixelConfig {
 }
 
 const platforms = [
-  { id: 'meta', name: 'Meta', desc: 'Conversions API', color: '#1877F2' },
-  { id: 'tiktok', name: 'TikTok', desc: 'Events API', color: '#ff0050' },
-  { id: 'google', name: 'Google Ads', desc: 'Enhanced Conversions', color: '#34a853' },
-  { id: 'applovin', name: 'AppLovin', desc: 'Axon S2S', color: '#ff6b35' },
+  { id: 'meta', name: 'Meta (Facebook)', desc: 'Recover 70%+ lost conversions with server-side tracking', color: '#1877F2', icon: 'M' },
+  { id: 'tiktok', name: 'TikTok', desc: 'Send events directly to TikTok for better ad optimization', color: '#000000', icon: 'T' },
+  { id: 'google', name: 'Google Ads', desc: 'Upload conversions with gclid for precise attribution', color: '#4285F4', icon: 'G' },
+  { id: 'applovin', name: 'AppLovin', desc: 'Server-to-server postback for Axon attribution', color: '#FF6B35', icon: 'A' },
 ];
 
 export default function Dashboard() {
@@ -86,7 +86,7 @@ export default function Dashboard() {
       setMessage('error');
     }
     setSaving(false);
-    setTimeout(() => setMessage(''), 4000);
+    setTimeout(() => setMessage(''), 5000);
   }
 
   function isConfigured(id: string) {
@@ -99,135 +99,151 @@ export default function Dashboard() {
     }
   }
 
+  const configuredCount = platforms.filter(p => isConfigured(p.id)).length;
+
   return (
-    <div className="min-h-screen p-6 md:p-8 max-w-[960px] mx-auto">
-      {/* Header */}
-      <header className="mb-8">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen p-5 md:p-8">
+      <div className="max-w-[820px] mx-auto">
+        {/* Header */}
+        <header className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             </div>
-            <span className="text-[17px] font-semibold tracking-[-0.02em]">PixelBridge</span>
+            <div>
+              <h1 className="text-[17px] font-bold" style={{ color: 'var(--text-primary)' }}>PixelBridge</h1>
+            </div>
           </div>
           {shop && (
-            <div className="flex items-center gap-2 text-[13px] text-[var(--text-secondary)]">
-              <span className="w-[6px] h-[6px] rounded-full bg-[var(--success)]"></span>
-              {shop}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium" style={{ background: 'var(--success-light)', color: 'var(--success)' }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--success)' }}></span>
+              Connected
             </div>
           )}
+        </header>
+
+        {/* Welcome Card */}
+        <div className="rounded-2xl p-5 mb-6" style={{ background: 'var(--accent-light)', border: '1px solid #e0dcff' }}>
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'var(--accent)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                Set up your tracking in 2 minutes
+              </p>
+              <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Select a platform below, paste your credentials, and hit Save. We handle everything else — script injection, event capture, and server-side forwarding.
+              </p>
+            </div>
+          </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="flex gap-6 flex-col md:flex-row">
-        {/* Sidebar */}
-        <nav className="md:w-[200px] flex-shrink-0">
-          <div className="text-[11px] uppercase tracking-[0.08em] text-[var(--text-muted)] font-medium mb-3 px-3">Platforms</div>
-          <div className="flex flex-row md:flex-col gap-1">
-            {platforms.map(p => (
-              <button
-                key={p.id}
-                onClick={() => setActive(p.id)}
-                className="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-150 relative group"
-                style={{
-                  background: active === p.id ? 'rgba(255,255,255,0.04)' : 'transparent',
-                  borderLeft: active === p.id ? `2px solid ${p.color}` : '2px solid transparent',
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[13px] font-medium" style={{ color: active === p.id ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                      {p.name}
-                    </div>
-                    <div className="text-[11px] text-[var(--text-muted)] hidden md:block">{p.desc}</div>
-                  </div>
-                  {isConfigured(p.id) && (
-                    <span className="w-[6px] h-[6px] rounded-full bg-[var(--success)]"></span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        </nav>
-
-        {/* Form Area */}
-        <div className="flex-1 min-w-0">
-          <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-6">
-            {active === 'meta' && (
-              <FormSection
-                title="Meta Conversions API"
-                description="Forward server-side events to Meta for improved attribution accuracy and higher EMQ scores."
-              >
-                <Field label="Pixel ID" value={metaPixelId} onChange={setMetaPixelId} placeholder="123456789012345" hint="Events Manager → Data Sources → Your Pixel" />
-                <Field label="Access Token" value={metaToken} onChange={setMetaToken} placeholder="EAAxxxxxxxxx..." type="password" hint="Events Manager → Settings → Generate Access Token" />
-              </FormSection>
-            )}
-
-            {active === 'tiktok' && (
-              <FormSection
-                title="TikTok Events API"
-                description="Send conversion events to TikTok for better ad optimization and campaign performance."
-              >
-                <Field label="Pixel Code" value={ttPixelCode} onChange={setTtPixelCode} placeholder="CXXXXXXXXXXXXXXXXX" hint="TikTok Ads Manager → Assets → Events" />
-                <Field label="Access Token" value={ttToken} onChange={setTtToken} placeholder="Server-side access token" type="password" hint="TikTok Business Center → Settings → Data Access" />
-              </FormSection>
-            )}
-
-            {active === 'google' && (
-              <FormSection
-                title="Google Ads Enhanced Conversions"
-                description="Upload click conversions with gclid matching for maximum attribution precision."
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="OAuth Client ID" value={gClientId} onChange={setGClientId} placeholder="xxxx.apps.googleusercontent.com" />
-                  <Field label="OAuth Client Secret" value={gClientSecret} onChange={setGClientSecret} type="password" placeholder="GOCSPX-xxxxxxxx" />
-                  <Field label="Refresh Token" value={gRefreshToken} onChange={setGRefreshToken} type="password" placeholder="1//xxxxxxxx" />
-                  <Field label="Developer Token" value={gDevToken} onChange={setGDevToken} placeholder="xxxxxxxxxxxxxxxx" />
-                  <Field label="Customer ID" value={gCustomerId} onChange={setGCustomerId} placeholder="1234567890" hint="10 digits, no dashes" />
-                  <Field label="Conversion Action ID" value={gConversionId} onChange={setGConversionId} placeholder="123456789" />
-                </div>
-              </FormSection>
-            )}
-
-            {active === 'applovin' && (
-              <FormSection
-                title="AppLovin Axon S2S"
-                description="Server-to-server event postback for AppLovin ad attribution and ROAS optimization."
-              >
-                <Field label="SDK Key" value={alSdkKey} onChange={setAlSdkKey} placeholder="Your AppLovin SDK Key" hint="AppLovin Dashboard → Account → Keys" />
-              </FormSection>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="mt-6">
-            {message === 'success' && (
-              <div className="mb-4 px-4 py-3 rounded-lg border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.05)] flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                <span className="text-[13px] text-[var(--success)]">Saved. Tracking script injected.</span>
-              </div>
-            )}
-            {message === 'error' && (
-              <div className="mb-4 px-4 py-3 rounded-lg border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.05)] flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
-                <span className="text-[13px] text-[var(--error)]">Failed to save. Try again.</span>
-              </div>
-            )}
+        {/* Platform Selector */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {platforms.map(p => (
             <button
-              onClick={handleSave}
-              disabled={saving || !shop}
-              className="w-full py-3 rounded-lg text-[14px] font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+              key={p.id}
+              onClick={() => setActive(p.id)}
+              className="relative p-4 rounded-xl text-left transition-all duration-150"
               style={{
-                background: saving || !shop ? 'var(--bg-input)' : 'var(--accent)',
-                color: 'white',
-                boxShadow: saving || !shop ? 'none' : '0 0 20px rgba(99, 102, 241, 0.3)',
+                background: active === p.id ? 'var(--bg-card)' : 'transparent',
+                border: active === p.id ? `2px solid ${p.color}` : '2px solid var(--border-default)',
+                boxShadow: active === p.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
               }}
             >
-              {saving ? 'Saving...' : 'Save & Activate'}
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold text-white" style={{ background: p.color }}>
+                  {p.icon}
+                </span>
+                <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{p.name.split(' ')[0]}</span>
+              </div>
+              {isConfigured(p.id) && (
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ background: 'var(--success)' }}></span>
+              )}
             </button>
-          </div>
+          ))}
         </div>
+
+        {/* Form Card */}
+        <div className="rounded-2xl p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          {active === 'meta' && (
+            <FormSection
+              title="Meta Conversions API"
+              description="Forward purchase events to Meta with full user data — email, phone, fbp, fbc. Our Cookie Bridge preserves attribution across Shopline's cross-domain checkout."
+            >
+              <Field label="Pixel ID" value={metaPixelId} onChange={setMetaPixelId} placeholder="e.g. 547832910234567" hint="Find in Events Manager → Data Sources → Select your pixel" />
+              <Field label="Access Token" value={metaToken} onChange={setMetaToken} placeholder="Paste your Conversions API token" type="password" hint="Events Manager → Settings → Conversions API → Generate access token" />
+            </FormSection>
+          )}
+
+          {active === 'tiktok' && (
+            <FormSection
+              title="TikTok Events API"
+              description="Send server-side events with ttclid matching. Our Cookie Bridge captures the click ID before cross-domain checkout loses it."
+            >
+              <Field label="Pixel Code" value={ttPixelCode} onChange={setTtPixelCode} placeholder="e.g. CJLK8A3C77U5TN1FGVEG" hint="TikTok Ads Manager → Assets → Events → Manage (Web Events)" />
+              <Field label="Access Token" value={ttToken} onChange={setTtToken} placeholder="Paste your Events API token" type="password" hint="Settings → Data Access → Tokens → Create" />
+            </FormSection>
+          )}
+
+          {active === 'google' && (
+            <FormSection
+              title="Google Ads Enhanced Conversions"
+              description="Upload purchase conversions with gclid for direct click attribution. Falls back to email-based matching when gclid is unavailable."
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                <Field label="OAuth Client ID" value={gClientId} onChange={setGClientId} placeholder="xxxxx.apps.googleusercontent.com" />
+                <Field label="OAuth Client Secret" value={gClientSecret} onChange={setGClientSecret} type="password" placeholder="GOCSPX-xxxxxxxx" />
+                <Field label="Refresh Token" value={gRefreshToken} onChange={setGRefreshToken} type="password" placeholder="1//0exxxxxxxx" />
+                <Field label="Developer Token" value={gDevToken} onChange={setGDevToken} placeholder="xXxXxXxXxXxXxXxX" />
+                <Field label="Customer ID" value={gCustomerId} onChange={setGCustomerId} placeholder="1234567890" hint="10 digits without dashes" />
+                <Field label="Conversion Action ID" value={gConversionId} onChange={setGConversionId} placeholder="123456789" />
+              </div>
+            </FormSection>
+          )}
+
+          {active === 'applovin' && (
+            <FormSection
+              title="AppLovin Axon S2S"
+              description="Server-to-server postback using the _axwrt cookie. Our Cookie Bridge preserves the Axon attribution ID through checkout."
+            >
+              <Field label="SDK Key" value={alSdkKey} onChange={setAlSdkKey} placeholder="Paste your SDK Key" hint="AppLovin Dashboard → Account → Keys" />
+            </FormSection>
+          )}
+        </div>
+
+        {/* Status Messages */}
+        {message === 'success' && (
+          <div className="mt-4 px-4 py-3 rounded-xl flex items-center gap-2" style={{ background: 'var(--success-light)', border: '1px solid #bbf7d0' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span className="text-[13px] font-medium" style={{ color: '#166534' }}>All set! Tracking is now active on your store.</span>
+          </div>
+        )}
+        {message === 'error' && (
+          <div className="mt-4 px-4 py-3 rounded-xl flex items-center gap-2" style={{ background: 'var(--error-light)', border: '1px solid #fecaca' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+            <span className="text-[13px] font-medium" style={{ color: '#991b1b' }}>Something went wrong. Please check your credentials and try again.</span>
+          </div>
+        )}
+
+        {/* Save Button */}
+        <button
+          onClick={handleSave}
+          disabled={saving || !shop}
+          className="w-full mt-5 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.99]"
+          style={{
+            background: 'var(--accent)',
+            boxShadow: saving || !shop ? 'none' : '0 2px 12px rgba(99, 91, 255, 0.25)',
+          }}
+        >
+          {saving ? 'Saving...' : `Save & Activate${configuredCount > 0 ? ` (${configuredCount} platform${configuredCount > 1 ? 's' : ''})` : ''}`}
+        </button>
+
+        {/* Footer hint */}
+        <p className="text-center text-[12px] mt-4" style={{ color: 'var(--text-muted)' }}>
+          Need help? Check our <a href="#" className="underline">setup guide</a> or contact support.
+        </p>
       </div>
     </div>
   );
@@ -236,8 +252,8 @@ export default function Dashboard() {
 function FormSection({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="text-[16px] font-semibold text-[var(--text-primary)] mb-1">{title}</h2>
-      <p className="text-[13px] text-[var(--text-muted)] mb-6 leading-relaxed">{description}</p>
+      <h2 className="text-[16px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+      <p className="text-[13px] leading-relaxed mb-5" style={{ color: 'var(--text-secondary)' }}>{description}</p>
       {children}
     </div>
   );
@@ -248,14 +264,14 @@ function Field({ label, value, onChange, placeholder, type = 'text', hint }: {
 }) {
   return (
     <div className="mb-4">
-      <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5 tracking-wide">{label}</label>
+      <label className="block text-[13px] font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>{label}</label>
       <input
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
       />
-      {hint && <p className="text-[11px] text-[var(--text-muted)] mt-1.5">{hint}</p>}
+      {hint && <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>{hint}</p>}
     </div>
   );
 }
