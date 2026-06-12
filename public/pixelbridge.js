@@ -10,6 +10,7 @@
 
   var SENT = {};
   var PURCHASE_KEY = 'pb_purchased_' + SHOP;
+  var CONFIG = null;
 
   function getCookie(name) {
     var m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
@@ -51,6 +52,76 @@
     }
   }
 
+  // === Meta Pixel (fbevents.js) ===
+  function initMetaPixel(pixelId) {
+    if (!pixelId || window.fbq) return;
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+    (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', pixelId);
+    fbq('track', 'PageView');
+  }
+
+  function fireMetaEvent(eventName, eventData, eventId) {
+    if (!window.fbq || !CONFIG || !CONFIG.meta) return;
+    var metaEvent = {
+      'page_view': 'PageView',
+      'view_item': 'ViewContent',
+      'add_to_cart': 'AddToCart',
+      'begin_checkout': 'InitiateCheckout',
+      'purchase': 'Purchase'
+    }[eventName];
+    if (!metaEvent) return;
+
+    var customData = {};
+    if (eventData.value) customData.value = eventData.value;
+    if (eventData.currency) customData.currency = eventData.currency;
+    if (eventData.product_id) customData.content_ids = [eventData.product_id];
+    if (eventData.product_id) customData.content_type = 'product';
+    if (eventData.order_id) customData.order_id = eventData.order_id;
+    if (eventData.quantity) customData.num_items = eventData.quantity;
+
+    fbq('track', metaEvent, customData, { eventID: eventId });
+  }
+
+  // === TikTok Pixel ===
+  function initTikTokPixel(pixelCode) {
+    if (!pixelCode || window.ttq) return;
+    !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
+    ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];
+    ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
+    for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
+    ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};
+    ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";
+    ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;
+    ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=document.createElement("script");
+    o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;
+    var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+    ttq.load(pixelCode);ttq.page()}(window,document,'ttq');
+  }
+
+  function fireTikTokEvent(eventName, eventData, eventId) {
+    if (!window.ttq || !CONFIG || !CONFIG.tiktok) return;
+    var ttEvent = {
+      'page_view': 'Pageview',
+      'view_item': 'ViewContent',
+      'add_to_cart': 'AddToCart',
+      'begin_checkout': 'InitiateCheckout',
+      'purchase': 'CompletePayment'
+    }[eventName];
+    if (!ttEvent || ttEvent === 'Pageview') return;
+
+    var props = {};
+    if (eventData.value) props.value = eventData.value;
+    if (eventData.currency) props.currency = eventData.currency;
+    if (eventData.product_id) props.contents = [{ content_id: eventData.product_id, content_type: 'product', quantity: eventData.quantity || 1 }];
+
+    ttq.track(ttEvent, props, { event_id: eventId });
+  }
+
+  // === Core Event Dispatch ===
   function sendEvent(name, data) {
     var dedupKey = name + '_' + (data.product_id || data.order_id || '');
     if (dedup(dedupKey)) return;
@@ -62,9 +133,16 @@
       localStorage.setItem(PURCHASE_KEY, (purchased || '') + ',' + orderId);
     }
 
+    var eventId = genEventId(name, data.product_id || data.order_id);
+
+    // Browser-side pixels (for platform detection tools & dedup with CAPI)
+    fireMetaEvent(name, data, eventId);
+    fireTikTokEvent(name, data, eventId);
+
+    // Server-side (CAPI forwarding via our backend)
     send('event', {
       event: name,
-      event_id: genEventId(name, data.product_id || data.order_id),
+      event_id: eventId,
       shop: SHOP,
       data: data,
       attribution: getAttribution(),
@@ -162,8 +240,31 @@
     return origFetch.apply(this, arguments);
   };
 
-  // Init
-  sendBridge();
-  sendEvent('page_view', {});
-  subscribeShopline();
+  // === Init: fetch config then start ===
+  function init() {
+    fetch(SERVER + '/api/pixel/config?shop=' + SHOP)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        CONFIG = data;
+        // Load browser-side pixels
+        if (data.meta && data.meta.pixelId) {
+          initMetaPixel(data.meta.pixelId);
+        }
+        if (data.tiktok && data.tiktok.pixelCode) {
+          initTikTokPixel(data.tiktok.pixelCode);
+        }
+        // Start tracking
+        sendBridge();
+        sendEvent('page_view', {});
+        subscribeShopline();
+      })
+      .catch(function() {
+        // Even if config fetch fails, still do basic tracking
+        sendBridge();
+        sendEvent('page_view', {});
+        subscribeShopline();
+      });
+  }
+
+  init();
 })();
