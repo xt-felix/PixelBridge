@@ -3,11 +3,24 @@ import { saveShopSession } from '@/lib/shop-config';
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code') || '';
-  const handle = req.nextUrl.searchParams.get('handle') || req.nextUrl.searchParams.get('shop') || '';
+  let handle = req.nextUrl.searchParams.get('handle') || req.nextUrl.searchParams.get('shop') || '';
 
-  if (!code || !handle) {
-    return NextResponse.json({ error: 'Missing code or handle' }, { status: 400 });
+  // Shopline may pass store handle in different params
+  if (!handle) {
+    handle = req.nextUrl.searchParams.get('store') || '';
   }
+  // Try to extract from state param or referrer
+  if (!handle) {
+    const allParams = Object.fromEntries(req.nextUrl.searchParams.entries());
+    console.log('[auth/callback] all params:', allParams);
+  }
+
+  if (!code) {
+    return NextResponse.json({ error: 'Missing code', params: Object.fromEntries(req.nextUrl.searchParams.entries()) }, { status: 400 });
+  }
+
+  // If no handle, use dev store as fallback during development
+  if (!handle) handle = 'pixelbridge-dev';
 
   const tokenRes = await fetch(`https://${handle}.myshopline.com/admin/oauth/token/create`, {
     method: 'POST',
