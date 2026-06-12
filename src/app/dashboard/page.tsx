@@ -37,7 +37,29 @@ export default function Dashboard() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const s = params.get('shop') || '';
+    let s = params.get('shop') || params.get('handle') || '';
+
+    // Try to extract from Shopline admin URL (iframe referrer or ancestor)
+    if (!s) {
+      try {
+        const ref = document.referrer;
+        const match = ref.match(/\/\/([^.]+)\.myshopline\.com/);
+        if (match) s = match[1];
+      } catch {}
+    }
+
+    // Try from the current page URL path (Shopline embeds at /apps/pixelbridge?shop=xxx)
+    if (!s) {
+      try {
+        const ancestorUrl = window.location.ancestorOrigins?.[0] || '';
+        const match = ancestorUrl.match(/\/\/([^.]+)\.myshopline\.com/);
+        if (match) s = match[1];
+      } catch {}
+    }
+
+    // Fallback: use a default for dev store
+    if (!s) s = 'pixelbridge-dev';
+
     setShop(s);
     if (s) loadConfig(s);
   }, []);
