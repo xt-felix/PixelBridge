@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   });
 
   const tokenData = await tokenRes.json();
-  const accessToken = tokenData.token || tokenData.access_token || tokenData.data?.token || tokenData.data?.access_token;
+  const accessToken = tokenData.data?.accessToken || tokenData.data?.access_token || tokenData.token || tokenData.access_token;
 
   if (!accessToken) {
     return NextResponse.json({
