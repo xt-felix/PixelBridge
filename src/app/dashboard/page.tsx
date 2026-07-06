@@ -207,20 +207,6 @@ export default async function DashboardPage({
           )}
         </div>
 
-        {/* Integration Snippet */}
-        {isActive && config?.pixelKey && (
-          <div className="animate-fade-in-up stagger-4 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-sm">
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Integration</h2>
-            <p className="text-xs text-gray-500 mb-3">
-              Add this script tag to your Shopline theme&apos;s <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">&lt;head&gt;</code> section:
-            </p>
-            <div className="bg-gray-900 rounded-xl p-4 overflow-x-auto">
-              <code className="text-xs text-green-400 whitespace-pre font-mono">
-                {`<script src="${process.env.SHOPLINE_APP_URL || 'https://pixel-bridge-seven.vercel.app'}/api/pixel/${shopId}"></script>`}
-              </code>
-            </div>
-          </div>
-        )}
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-400 pt-2 pb-4">
