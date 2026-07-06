@@ -25,7 +25,7 @@ describe('shop data layer', () => {
   });
 
   it('saves and retrieves subscription', async () => {
-    const sub = { status: 'trial' as const, trialEnd: Date.now() + 259200000 };
+    const sub = { status: 'trial' as const, startAt: Date.now(), endAt: Date.now() + 259200000 };
     await saveShopSubscription('test-shop', sub);
     const result = await getShopSubscription('test-shop');
     expect(result?.status).toBe('trial');

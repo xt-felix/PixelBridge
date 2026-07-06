@@ -1,37 +1,38 @@
 import { describe, it, expect } from 'vitest';
-import { isSubscriptionActive, TRIAL_DURATION_MS } from '@/lib/subscription';
+import { isSubscriptionActive } from '@/lib/subscription';
 
 describe('subscription state machine', () => {
-  it('trial is active when within trial period', () => {
-    const sub = { status: 'trial' as const, trialEnd: Date.now() + 100000 };
+  it('trial is active when within end date', () => {
+    const sub = { status: 'trial' as const, startAt: Date.now(), endAt: Date.now() + 100000 };
     expect(isSubscriptionActive(sub)).toBe(true);
   });
 
-  it('trial is expired when past trial end', () => {
-    const sub = { status: 'trial' as const, trialEnd: Date.now() - 1000 };
+  it('trial is expired when past end date', () => {
+    const sub = { status: 'trial' as const, startAt: Date.now() - 200000, endAt: Date.now() - 1000 };
     expect(isSubscriptionActive(sub)).toBe(false);
   });
 
-  it('active subscription is always active', () => {
-    const sub = { status: 'active' as const, trialEnd: 0, chargeId: 'ch_123' };
+  it('active subscription is active when within end date', () => {
+    const sub = { status: 'active' as const, startAt: Date.now(), endAt: Date.now() + 2592000000 };
     expect(isSubscriptionActive(sub)).toBe(true);
   });
 
+  it('active subscription is expired when past end date', () => {
+    const sub = { status: 'active' as const, startAt: Date.now() - 5000000, endAt: Date.now() - 1000 };
+    expect(isSubscriptionActive(sub)).toBe(false);
+  });
+
   it('expired subscription is not active', () => {
-    const sub = { status: 'expired' as const, trialEnd: Date.now() - 100000 };
+    const sub = { status: 'expired' as const, startAt: 0, endAt: 0 };
     expect(isSubscriptionActive(sub)).toBe(false);
   });
 
   it('cancelled subscription is not active', () => {
-    const sub = { status: 'cancelled' as const, trialEnd: 0 };
+    const sub = { status: 'cancelled' as const, startAt: 0, endAt: 0 };
     expect(isSubscriptionActive(sub)).toBe(false);
   });
 
   it('null subscription is not active', () => {
     expect(isSubscriptionActive(null)).toBe(false);
-  });
-
-  it('trial duration is 3 days', () => {
-    expect(TRIAL_DURATION_MS).toBe(3 * 24 * 60 * 60 * 1000);
   });
 });

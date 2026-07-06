@@ -70,50 +70,6 @@ export async function registerWebhook(shopHandle: string, accessToken: string, t
   });
 }
 
-export async function createRecurringCharge(
-  shopHandle: string,
-  accessToken: string,
-  opts: { name: string; price: number; trialDays?: number; returnUrl: string }
-): Promise<{ confirmUrl: string; chargeId: string } | null> {
-  const res = await fetch(
-    `${getBaseUrl(shopHandle)}/admin/openapi/v20250601/recurring_application_charges.json`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        recurring_application_charge: {
-          name: opts.name,
-          price: opts.price,
-          trial_days: opts.trialDays || 0,
-          return_url: opts.returnUrl,
-        },
-      }),
-    }
-  );
-  const data = await res.json();
-  const charge = data.recurring_application_charge;
-  if (!charge) return null;
-  return { confirmUrl: charge.confirmation_url, chargeId: charge.id };
-}
-
-export async function getRecurringCharge(
-  shopHandle: string,
-  accessToken: string,
-  chargeId: string
-): Promise<{ status: string } | null> {
-  const res = await fetch(
-    `${getBaseUrl(shopHandle)}/admin/openapi/v20250601/recurring_application_charges/${chargeId}.json`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }
-  );
-  const data = await res.json();
-  return data.recurring_application_charge || null;
-}
-
 export function buildOAuthUrl(shopHandle: string): string {
   const appKey = process.env.SHOPLINE_APP_KEY!;
   const appUrl = process.env.SHOPLINE_APP_URL!;

@@ -7,8 +7,10 @@ export interface ShopConfig {
 
 export interface ShopSubscription {
   status: 'trial' | 'expired' | 'active' | 'cancelled';
-  trialEnd: number;
-  chargeId?: string;
+  startAt: number;
+  endAt: number;
+  spuKey?: string;
+  autoRenew?: boolean;
 }
 
 export interface ShopToken {

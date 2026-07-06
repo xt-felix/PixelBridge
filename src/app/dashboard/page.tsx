@@ -1,5 +1,5 @@
 import { getShopConfig, getShopSubscription, getShopStats, saveShopConfig } from '@/lib/shop';
-import { getSubscriptionDisplayStatus } from '@/lib/subscription';
+import { isSubscriptionActive, getSubscriptionDisplayStatus } from '@/lib/subscription';
 import { redirect } from 'next/navigation';
 
 async function handleSaveConfig(formData: FormData) {
@@ -11,8 +11,7 @@ async function handleSaveConfig(formData: FormData) {
     redirect(`/dashboard?shop=${shopId}&error=pixel_key_required`);
   }
   const sub = await getShopSubscription(shopId);
-  const active = sub?.status === 'active' || (sub?.status === 'trial' && Date.now() < sub.trialEnd);
-  if (!active) {
+  if (!isSubscriptionActive(sub)) {
     redirect(`/dashboard?shop=${shopId}&error=subscription_required`);
   }
   await saveShopConfig(shopId, { pixelKey, categoryId });
@@ -22,7 +21,7 @@ async function handleSaveConfig(formData: FormData) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shop?: string; handle?: string; saved?: string; billing?: string; error?: string }>;
+  searchParams: Promise<{ shop?: string; handle?: string; saved?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const shopId = params.shop || params.handle || '';
@@ -42,8 +41,7 @@ export default async function DashboardPage({
   ]);
 
   const displayStatus = getSubscriptionDisplayStatus(sub);
-  const isActive = sub?.status === 'active' || (sub?.status === 'trial' && Date.now() < sub.trialEnd);
-  const isExpired = !isActive && sub?.status !== 'cancelled';
+  const isActive = isSubscriptionActive(sub);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -62,12 +60,7 @@ export default async function DashboardPage({
         )}
         {params.error === 'subscription_required' && (
           <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
-            Please subscribe to save configuration.
-          </div>
-        )}
-        {params.billing === 'success' && (
-          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded">
-            Subscription activated! Your pixel is now active.
+            Your subscription has expired. Please renew from the Shopline app management page.
           </div>
         )}
 
@@ -76,29 +69,21 @@ export default async function DashboardPage({
           <h2 className="text-lg font-semibold mb-2">Status</h2>
           <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
             isActive ? 'bg-green-100 text-green-800' :
-            isExpired ? 'bg-red-100 text-red-800' :
-            'bg-gray-100 text-gray-600'
+            'bg-red-100 text-red-800'
           }`}>
             {displayStatus.label}
           </span>
+          {!isActive && sub?.status === 'expired' && (
+            <p className="mt-2 text-sm text-gray-500">
+              Please renew your subscription from the Shopline admin panel.
+            </p>
+          )}
+          {!sub && (
+            <p className="mt-2 text-sm text-gray-500">
+              Waiting for subscription activation. This updates automatically when your plan starts.
+            </p>
+          )}
         </div>
-
-        {/* Subscribe CTA */}
-        {isExpired && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-yellow-900 mb-2">Trial Expired</h2>
-            <p className="text-yellow-800 mb-4">Subscribe to continue tracking conversions. $4.99/month.</p>
-            <form action="/api/billing" method="POST">
-              <input type="hidden" name="shopId" value={shopId} />
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700"
-              >
-                Subscribe Now
-              </button>
-            </form>
-          </div>
-        )}
 
         {/* Configuration */}
         <div className="bg-white rounded-lg shadow p-6">

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForToken, createScriptTag, registerWebhook } from '@/lib/shopline-api';
-import { saveShopToken, saveShopSubscription } from '@/lib/shop';
-import { createTrialSubscription } from '@/lib/subscription';
+import { saveShopToken } from '@/lib/shop';
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code') || '';
@@ -22,9 +21,13 @@ export async function GET(req: NextRequest) {
   const pixelSrc = `${appUrl}/api/pixel/${shop}`;
   await createScriptTag(shop, accessToken, pixelSrc);
 
-  await registerWebhook(shop, accessToken, 'app/uninstalled', `${appUrl}/api/webhook`);
-
-  await saveShopSubscription(shop, createTrialSubscription());
+  const webhookUrl = `${appUrl}/api/webhook`;
+  await Promise.all([
+    registerWebhook(shop, accessToken, 'app/uninstalled', webhookUrl),
+    registerWebhook(shop, accessToken, 'appsubscription/create', webhookUrl),
+    registerWebhook(shop, accessToken, 'appsubscription/expired', webhookUrl),
+    registerWebhook(shop, accessToken, 'appsubscription/payment_finalized', webhookUrl),
+  ]);
 
   return NextResponse.redirect(`${appUrl}/dashboard?shop=${shop}`);
 }

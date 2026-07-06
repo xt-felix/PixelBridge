@@ -1,33 +1,27 @@
 import { type ShopSubscription } from './shop';
 
-export const TRIAL_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
-
 export function isSubscriptionActive(sub: ShopSubscription | null): boolean {
   if (!sub) return false;
-  if (sub.status === 'active') return true;
-  if (sub.status === 'trial') return Date.now() < sub.trialEnd;
+  if (sub.status === 'active') return Date.now() < sub.endAt;
+  if (sub.status === 'trial') return Date.now() < sub.endAt;
   return false;
-}
-
-export function createTrialSubscription(): ShopSubscription {
-  return {
-    status: 'trial',
-    trialEnd: Date.now() + TRIAL_DURATION_MS,
-  };
 }
 
 export function getSubscriptionDisplayStatus(sub: ShopSubscription | null): {
   label: string;
   daysLeft?: number;
 } {
-  if (!sub) return { label: 'Not installed' };
-  if (sub.status === 'active') return { label: 'Active' };
+  if (!sub) return { label: 'Pending' };
   if (sub.status === 'cancelled') return { label: 'Cancelled' };
   if (sub.status === 'expired') return { label: 'Expired' };
+
+  const msLeft = sub.endAt - Date.now();
+  if (msLeft <= 0) return { label: 'Expired' };
+
+  const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+
+  if (sub.status === 'active') return { label: 'Active', daysLeft };
   if (sub.status === 'trial') {
-    const msLeft = sub.trialEnd - Date.now();
-    if (msLeft <= 0) return { label: 'Expired' };
-    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
     return { label: `Trial (${daysLeft} day${daysLeft > 1 ? 's' : ''} left)`, daysLeft };
   }
   return { label: 'Unknown' };

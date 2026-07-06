@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getShopConfig, getShopSubscription, saveShopSubscription } from '@/lib/shop';
+import { getShopConfig, getShopSubscription } from '@/lib/shop';
 import { isSubscriptionActive } from '@/lib/subscription';
 import { buildPixelScript } from '@/pixel/axon-pixel-template';
 
@@ -11,9 +11,6 @@ export async function GET(
   const sub = await getShopSubscription(shopId);
 
   if (!isSubscriptionActive(sub)) {
-    if (sub && sub.status === 'trial' && Date.now() >= sub.trialEnd) {
-      await saveShopSubscription(shopId, { ...sub, status: 'expired' });
-    }
     return new NextResponse('// inactive', {
       headers: {
         'Content-Type': 'application/javascript',
