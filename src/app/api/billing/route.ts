@@ -3,7 +3,16 @@ import { getShopToken, getShopSubscription, saveShopSubscription } from '@/lib/s
 import { createRecurringCharge, getRecurringCharge } from '@/lib/shopline-api';
 
 export async function POST(req: NextRequest) {
-  const { shopId } = await req.json();
+  let shopId = '';
+  const contentType = req.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    const body = await req.json();
+    shopId = body.shopId || '';
+  } else {
+    const formData = await req.formData();
+    shopId = (formData.get('shopId') as string) || '';
+  }
+
   if (!shopId) {
     return NextResponse.json({ error: 'Missing shopId' }, { status: 400 });
   }
@@ -21,10 +30,10 @@ export async function POST(req: NextRequest) {
   });
 
   if (!result) {
-    return NextResponse.json({ error: 'Failed to create charge' }, { status: 500 });
+    return NextResponse.redirect(`${appUrl}/dashboard?shop=${shopId}&billing=error`);
   }
 
-  return NextResponse.json({ confirmUrl: result.confirmUrl, chargeId: result.chargeId });
+  return NextResponse.redirect(result.confirmUrl);
 }
 
 export async function GET(req: NextRequest) {
