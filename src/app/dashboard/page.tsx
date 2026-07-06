@@ -14,10 +14,10 @@ async function handleSaveConfig(formData: FormData) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shop?: string; saved?: string; billing?: string }>;
+  searchParams: Promise<{ shop?: string; handle?: string; saved?: string; billing?: string }>;
 }) {
   const params = await searchParams;
-  const shopId = params.shop || '';
+  const shopId = params.shop || params.handle || '';
 
   if (!shopId) {
     return (
