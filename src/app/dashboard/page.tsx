@@ -28,8 +28,16 @@ export default async function DashboardPage({
 
   if (!shopId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Missing shop parameter. Please install the app from Shopline.</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center animate-fade-in-up">
+          <div className="w-12 h-12 rounded-xl bg-[var(--brand-accent)] flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-[var(--brand-primary)] mb-1">Missing Shop Parameter</h2>
+          <p className="text-sm text-gray-500">Please install the app from the Shopline App Store.</p>
+        </div>
       </div>
     );
   }
@@ -43,84 +51,126 @@ export default async function DashboardPage({
   const displayStatus = getSubscriptionDisplayStatus(sub);
   const isActive = isSubscriptionActive(sub);
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Axon Pixel for Shopline</h1>
+  const statusColor = isActive
+    ? 'bg-[var(--success-bg)] text-[var(--success)] border-emerald-200'
+    : sub?.status === 'expired'
+      ? 'bg-[var(--danger-bg)] text-[var(--danger)] border-red-200'
+      : 'bg-[var(--warning-bg)] text-[var(--warning)] border-amber-200';
 
+  return (
+    <div className="min-h-screen py-8 px-4 md:px-6">
+      <div className="max-w-3xl mx-auto space-y-6">
+
+        {/* Header */}
+        <div className="animate-fade-in-up">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-9 h-9 rounded-lg bg-[var(--brand-accent)] flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-[var(--brand-primary)]">PixelBridge</h1>
+              <p className="text-xs text-gray-500">Axon Pixel for Shopline</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Alerts */}
         {params.saved === 'true' && (
-          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded">
+          <div className="animate-slide-in flex items-center gap-2 bg-[var(--success-bg)] border border-emerald-200 text-[var(--success)] px-4 py-3 rounded-xl text-sm font-medium">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
             Configuration saved successfully!
           </div>
         )}
         {params.error === 'pixel_key_required' && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+          <div className="animate-slide-in flex items-center gap-2 bg-[var(--danger-bg)] border border-red-200 text-[var(--danger)] px-4 py-3 rounded-xl text-sm font-medium">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18 9 9 0 000-18z" />
+            </svg>
             Pixel Key is required. Please enter your AppLovin Axon Pixel Key.
           </div>
         )}
         {params.error === 'subscription_required' && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
-            Your subscription has expired. Please renew from the Shopline app management page.
+          <div className="animate-slide-in flex items-center gap-2 bg-[var(--danger-bg)] border border-red-200 text-[var(--danger)] px-4 py-3 rounded-xl text-sm font-medium">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18 9 9 0 000-18z" />
+            </svg>
+            Subscription expired. Please renew from the Shopline app management page.
           </div>
         )}
 
-        {/* Status */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-2">Status</h2>
-          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-            isActive ? 'bg-green-100 text-green-800' :
-            'bg-red-100 text-red-800'
-          }`}>
-            {displayStatus.label}
-          </span>
+        {/* Status Card */}
+        <div className="animate-fade-in-up stagger-1 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-2.5 h-2.5 rounded-full ${isActive ? 'bg-[var(--success)] animate-pulse-dot' : 'bg-gray-300'}`} />
+              <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Subscription</h2>
+            </div>
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${statusColor}`}>
+              {displayStatus.label}
+            </span>
+          </div>
           {!isActive && sub?.status === 'expired' && (
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-3 text-sm text-gray-500 pl-5.5">
               Please renew your subscription from the Shopline admin panel.
             </p>
           )}
           {!sub && (
-            <p className="mt-2 text-sm text-gray-500">
-              Waiting for subscription activation. This updates automatically when your plan starts.
-            </p>
+            <div className="mt-4 bg-[var(--brand-accent-light)] rounded-xl p-4">
+              <p className="text-sm text-[var(--brand-accent)] font-medium">
+                Waiting for subscription activation
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                This updates automatically once your plan starts. If you just installed, it may take a moment.
+              </p>
+            </div>
           )}
         </div>
 
-        {/* Configuration */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Configuration</h2>
+        {/* Configuration Card */}
+        <div className="animate-fade-in-up stagger-2 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-5">Configuration</h2>
           <form action={handleSaveConfig}>
             <input type="hidden" name="shopId" value={shopId} />
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Axon Pixel Key
                 </label>
                 <input
                   name="pixelKey"
                   type="text"
                   defaultValue={config?.pixelKey || ''}
-                  placeholder="Enter your AppLovin Axon Pixel Key"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g. abc123def456..."
+                  disabled={!isActive}
+                  className="w-full border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-[var(--brand-accent)] focus:border-[var(--brand-accent)] transition-shadow disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Find this in your AppLovin MAX Dashboard → Account → Keys
+                <p className="text-xs text-gray-400 mt-1.5">
+                  Find this in your AppLovin MAX Dashboard &rarr; Account &rarr; Keys
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Category ID
                 </label>
                 <input
                   name="categoryId"
                   type="number"
                   defaultValue={config?.categoryId || 166}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={!isActive}
+                  className="w-full border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-[var(--brand-accent)] focus:border-[var(--brand-accent)] transition-shadow disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                 />
+                <p className="text-xs text-gray-400 mt-1.5">
+                  Default: 166 (E-commerce). Change only if directed by AppLovin.
+                </p>
               </div>
               <button
                 type="submit"
                 disabled={!isActive}
-                className={`px-6 py-2 rounded-lg font-medium ${isActive ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold transition-all bg-[var(--brand-accent)] text-white hover:opacity-90 active:scale-[0.98] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 Save Configuration
               </button>
@@ -128,39 +178,64 @@ export default async function DashboardPage({
           </form>
         </div>
 
-        {/* Event Statistics */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Event Statistics</h2>
-          {stats ? (
+        {/* Stats Card */}
+        <div className="animate-fade-in-up stagger-3 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-5">Event Statistics</h2>
+          {stats && (stats.pv > 0 || stats.atc > 0 || stats.bc > 0 || stats.pc > 0) ? (
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">{stats.pv.toLocaleString()}</div>
-                  <div className="text-sm text-gray-500">Page Views</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">{stats.atc.toLocaleString()}</div>
-                  <div className="text-sm text-gray-500">Add to Cart</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">{stats.bc.toLocaleString()}</div>
-                  <div className="text-sm text-gray-500">Checkout</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">{stats.pc.toLocaleString()}</div>
-                  <div className="text-sm text-gray-500">Purchase</div>
-                </div>
+                <StatCard label="Page Views" value={stats.pv} />
+                <StatCard label="Add to Cart" value={stats.atc} />
+                <StatCard label="Checkout" value={stats.bc} />
+                <StatCard label="Purchase" value={stats.pc} />
               </div>
-              <div className="mt-4 pt-4 border-t flex justify-between text-sm text-gray-500">
-                <span>GMV: ${stats.gmv.toLocaleString()}</span>
-                <span>Last activity: {stats.lastSeen ? new Date(stats.lastSeen).toLocaleString() : 'Never'}</span>
+              <div className="mt-5 pt-4 border-t border-[var(--border)] flex flex-wrap justify-between gap-2 text-xs text-gray-400">
+                <span>GMV: <span className="font-semibold text-gray-600">${stats.gmv.toLocaleString()}</span></span>
+                <span>Last: {stats.lastSeen ? new Date(stats.lastSeen).toLocaleString() : '—'}</span>
               </div>
             </>
           ) : (
-            <p className="text-gray-500">No data yet. Events will appear here once your pixel starts firing.</p>
+            <div className="text-center py-6">
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-500">No events yet</p>
+              <p className="text-xs text-gray-400 mt-1">Data appears once your pixel starts firing on the storefront.</p>
+            </div>
           )}
         </div>
+
+        {/* Integration Snippet */}
+        {isActive && config?.pixelKey && (
+          <div className="animate-fade-in-up stagger-4 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-sm">
+            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Integration</h2>
+            <p className="text-xs text-gray-500 mb-3">
+              Add this script tag to your Shopline theme&apos;s <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">&lt;head&gt;</code> section:
+            </p>
+            <div className="bg-gray-900 rounded-xl p-4 overflow-x-auto">
+              <code className="text-xs text-green-400 whitespace-pre font-mono">
+                {`<script src="${process.env.SHOPLINE_APP_URL || 'https://pixel-bridge-seven.vercel.app'}/api/pixel/${shopId}"></script>`}
+              </code>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="text-center text-xs text-gray-400 pt-2 pb-4">
+          PixelBridge v1.0 &middot; Powered by AppLovin Axon
+        </div>
       </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-[var(--surface-muted)] rounded-xl p-4 text-center">
+      <div className="text-2xl font-bold text-[var(--brand-primary)]">{value.toLocaleString()}</div>
+      <div className="text-xs text-gray-500 mt-1">{label}</div>
     </div>
   );
 }
