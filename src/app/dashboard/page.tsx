@@ -5,8 +5,11 @@ import { redirect } from 'next/navigation';
 async function handleSaveConfig(formData: FormData) {
   'use server';
   const shopId = formData.get('shopId') as string;
-  const pixelKey = formData.get('pixelKey') as string;
+  const pixelKey = (formData.get('pixelKey') as string || '').trim();
   const categoryId = parseInt(formData.get('categoryId') as string) || 166;
+  if (!pixelKey) {
+    redirect(`/dashboard?shop=${shopId}&error=pixel_key_required`);
+  }
   await saveShopConfig(shopId, { pixelKey, categoryId });
   redirect(`/dashboard?shop=${shopId}&saved=true`);
 }
@@ -14,7 +17,7 @@ async function handleSaveConfig(formData: FormData) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shop?: string; handle?: string; saved?: string; billing?: string }>;
+  searchParams: Promise<{ shop?: string; handle?: string; saved?: string; billing?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const shopId = params.shop || params.handle || '';
@@ -45,6 +48,11 @@ export default async function DashboardPage({
         {params.saved === 'true' && (
           <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded">
             Configuration saved successfully!
+          </div>
+        )}
+        {params.error === 'pixel_key_required' && (
+          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+            Pixel Key is required. Please enter your AppLovin Axon Pixel Key.
           </div>
         )}
         {params.billing === 'success' && (
