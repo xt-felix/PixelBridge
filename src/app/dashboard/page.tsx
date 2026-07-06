@@ -10,6 +10,11 @@ async function handleSaveConfig(formData: FormData) {
   if (!pixelKey) {
     redirect(`/dashboard?shop=${shopId}&error=pixel_key_required`);
   }
+  const sub = await getShopSubscription(shopId);
+  const active = sub?.status === 'active' || (sub?.status === 'trial' && Date.now() < sub.trialEnd);
+  if (!active) {
+    redirect(`/dashboard?shop=${shopId}&error=subscription_required`);
+  }
   await saveShopConfig(shopId, { pixelKey, categoryId });
   redirect(`/dashboard?shop=${shopId}&saved=true`);
 }
@@ -53,6 +58,11 @@ export default async function DashboardPage({
         {params.error === 'pixel_key_required' && (
           <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
             Pixel Key is required. Please enter your AppLovin Axon Pixel Key.
+          </div>
+        )}
+        {params.error === 'subscription_required' && (
+          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+            Please subscribe to save configuration.
           </div>
         )}
         {params.billing === 'success' && (
@@ -124,7 +134,8 @@ export default async function DashboardPage({
               </div>
               <button
                 type="submit"
-                className="bg-gray-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800"
+                disabled={!isActive}
+                className={`px-6 py-2 rounded-lg font-medium ${isActive ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
               >
                 Save Configuration
               </button>
