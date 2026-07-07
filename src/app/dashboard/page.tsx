@@ -1,5 +1,4 @@
-import { getShopConfig, getShopSubscription, getShopStats, saveShopConfig } from '@/lib/shop';
-import { isSubscriptionActive, getSubscriptionDisplayStatus } from '@/lib/subscription';
+import { getShopConfig, getShopStats, saveShopConfig } from '@/lib/shop';
 import { redirect } from 'next/navigation';
 
 async function handleSaveConfig(formData: FormData) {
@@ -9,10 +8,6 @@ async function handleSaveConfig(formData: FormData) {
   const categoryId = parseInt(formData.get('categoryId') as string) || 166;
   if (!pixelKey) {
     redirect(`/dashboard?shop=${shopId}&error=pixel_key_required`);
-  }
-  const sub = await getShopSubscription(shopId);
-  if (!isSubscriptionActive(sub)) {
-    redirect(`/dashboard?shop=${shopId}&error=subscription_required`);
   }
   await saveShopConfig(shopId, { pixelKey, categoryId });
   redirect(`/dashboard?shop=${shopId}&saved=true`);
@@ -42,20 +37,10 @@ export default async function DashboardPage({
     );
   }
 
-  const [config, sub, stats] = await Promise.all([
+  const [config, stats] = await Promise.all([
     getShopConfig(shopId),
-    getShopSubscription(shopId),
     getShopStats(shopId),
   ]);
-
-  const displayStatus = getSubscriptionDisplayStatus(sub);
-  const isActive = isSubscriptionActive(sub);
-
-  const statusColor = isActive
-    ? 'bg-[var(--success-bg)] text-[var(--success)] border-emerald-200'
-    : sub?.status === 'expired'
-      ? 'bg-[var(--danger-bg)] text-[var(--danger)] border-red-200'
-      : 'bg-[var(--warning-bg)] text-[var(--warning)] border-amber-200';
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-6">
@@ -93,45 +78,9 @@ export default async function DashboardPage({
             Pixel Key is required. Please enter your AppLovin Axon Pixel Key.
           </div>
         )}
-        {params.error === 'subscription_required' && (
-          <div className="animate-slide-in flex items-center gap-2 bg-[var(--danger-bg)] border border-red-200 text-[var(--danger)] px-4 py-3 rounded-xl text-sm font-medium">
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18 9 9 0 000-18z" />
-            </svg>
-            Subscription expired. Please renew from the Shopline app management page.
-          </div>
-        )}
-
-        {/* Status Card */}
-        <div className="animate-fade-in-up stagger-1 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${isActive ? 'bg-[var(--success)] animate-pulse-dot' : 'bg-gray-300'}`} />
-              <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Subscription</h2>
-            </div>
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${statusColor}`}>
-              {displayStatus.label}
-            </span>
-          </div>
-          {!isActive && sub?.status === 'expired' && (
-            <p className="mt-3 text-sm text-gray-500 pl-5.5">
-              Please renew your subscription from the Shopline admin panel.
-            </p>
-          )}
-          {!sub && (
-            <div className="mt-4 bg-[var(--brand-accent-light)] rounded-xl p-4">
-              <p className="text-sm text-[var(--brand-accent)] font-medium">
-                Waiting for subscription activation
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                This updates automatically once your plan starts. If you just installed, it may take a moment.
-              </p>
-            </div>
-          )}
-        </div>
 
         {/* Configuration Card */}
-        <div className="animate-fade-in-up stagger-2 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-sm">
+        <div className="animate-fade-in-up stagger-1 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-5">Configuration</h2>
           <form action={handleSaveConfig}>
             <input type="hidden" name="shopId" value={shopId} />
@@ -145,8 +94,7 @@ export default async function DashboardPage({
                   type="text"
                   defaultValue={config?.pixelKey || ''}
                   placeholder="e.g. abc123def456..."
-                  disabled={!isActive}
-                  className="w-full border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-[var(--brand-accent)] focus:border-[var(--brand-accent)] transition-shadow disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  className="w-full border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-[var(--brand-accent)] focus:border-[var(--brand-accent)] transition-shadow"
                 />
                 <p className="text-xs text-gray-400 mt-1.5">
                   Find this in your AppLovin MAX Dashboard &rarr; Account &rarr; Keys
@@ -160,8 +108,7 @@ export default async function DashboardPage({
                   name="categoryId"
                   type="number"
                   defaultValue={config?.categoryId || 166}
-                  disabled={!isActive}
-                  className="w-full border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-[var(--brand-accent)] focus:border-[var(--brand-accent)] transition-shadow disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  className="w-full border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-[var(--brand-accent)] focus:border-[var(--brand-accent)] transition-shadow"
                 />
                 <p className="text-xs text-gray-400 mt-1.5">
                   Default: 166 (E-commerce). Change only if directed by AppLovin.
@@ -169,8 +116,7 @@ export default async function DashboardPage({
               </div>
               <button
                 type="submit"
-                disabled={!isActive}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold transition-all bg-[var(--brand-accent)] text-white hover:opacity-90 active:scale-[0.98] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:active:scale-100"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold transition-all bg-[var(--brand-accent)] text-white hover:opacity-90 active:scale-[0.98]"
               >
                 Save Configuration
               </button>
@@ -179,7 +125,7 @@ export default async function DashboardPage({
         </div>
 
         {/* Stats Card */}
-        <div className="animate-fade-in-up stagger-3 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-sm">
+        <div className="animate-fade-in-up stagger-2 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-5">Event Statistics</h2>
           {stats && (stats.pv > 0 || stats.atc > 0 || stats.bc > 0 || stats.pc > 0) ? (
             <>
@@ -207,6 +153,23 @@ export default async function DashboardPage({
           )}
         </div>
 
+        {/* Shopline Affiliate Banner */}
+        <a
+          href="https://admin.myshopline.com/user/signUp?ref=xUQW1rZY&nozk=true"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="animate-fade-in-up stagger-3 block bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white font-semibold text-sm">Recommend Shopline to your friends</p>
+              <p className="text-indigo-100 text-xs mt-1">Help fellow merchants start their online store — both of you get rewarded!</p>
+            </div>
+            <svg className="w-5 h-5 text-white shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </a>
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-400 pt-2 pb-4">

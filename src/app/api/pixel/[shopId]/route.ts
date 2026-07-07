@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getShopConfig, getShopSubscription } from '@/lib/shop';
-import { isSubscriptionActive } from '@/lib/subscription';
+import { getShopConfig } from '@/lib/shop';
 import { buildPixelScript } from '@/pixel/axon-pixel-template';
 
 export async function GET(
@@ -8,17 +7,6 @@ export async function GET(
   { params }: { params: Promise<{ shopId: string }> }
 ) {
   const { shopId } = await params;
-  const sub = await getShopSubscription(shopId);
-
-  if (!isSubscriptionActive(sub)) {
-    return new NextResponse('// inactive', {
-      headers: {
-        'Content-Type': 'application/javascript',
-        'Cache-Control': 'public, max-age=300',
-      },
-    });
-  }
-
   const config = await getShopConfig(shopId);
   if (!config || !config.pixelKey) {
     return new NextResponse('// not configured', {
